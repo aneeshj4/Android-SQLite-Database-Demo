@@ -36,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
         context = MainActivity.this;
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        /*When the fab is clicked, a dialog appears that allows the uesr to enter a new item
+        * into the array.*/
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -58,14 +60,16 @@ public class MainActivity extends AppCompatActivity {
                         .setPositiveButton("Save", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
+                                /*Content values are used to put data in the database.
+                                * contentValues.put works exactly like sharedPreferences; the first parameter is a "key" and the 2nd is the value.
+                                * The "key," however, must be the column name that the value should be inserted into.*/
                                 ContentValues contentValues = new ContentValues();
                                 contentValues.put(CommentsContract.CommentEntry.COLUMN_NAME_ITEM_NAME, nameEditText.getText().toString());
                                 contentValues.put(CommentsContract.CommentEntry.COLUMN_NAME_ITEM_COMMENT, commentEditText.getText().toString());
+                                //Insert the values in contentValues into the database with name TABLE_NAME
                                 database.insert(CommentsContract.CommentEntry.TABLE_NAME, null, contentValues);
-                                String[] projection = {CommentsContract.CommentEntry._ID,
-                                        CommentsContract.CommentEntry.COLUMN_NAME_ITEM_NAME, CommentsContract.CommentEntry.COLUMN_NAME_ITEM_COMMENT};
-                                adapter.updateCursor(database.query(CommentsContract.CommentEntry.TABLE_NAME, projection, null, null, null, null, null));
-                                adapter.notifyDataSetChanged();
+                                //Requery to update the RecyclerView with the new data
+                                refreshRecyclerView();
                             }
                         })
                         .setNegativeButton("Cancel", null)
@@ -82,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
         String[] projection = {CommentsContract.CommentEntry._ID,
                 CommentsContract.CommentEntry.COLUMN_NAME_ITEM_NAME, CommentsContract.CommentEntry.COLUMN_NAME_ITEM_COMMENT};
 
+        /*Queries in a database return a Cursor object. We pass in the cursor as a parameter to the adapter, and then
+        * set the adapter to the recyclerView*/
         Cursor cursor = database.query(CommentsContract.CommentEntry.TABLE_NAME, projection, null, null, null, null, null);
         adapter = new CommentsAdapter(getApplicationContext(), cursor);
         recyclerView.setAdapter(adapter);
@@ -161,17 +167,19 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String[] whereArgs = {Integer.toString(id)};
+                        /*Content values are used to put data in the database.
+                        * contentValues.put works exactly like sharedPreferences; the first parameter is a "key" and the 2nd is the value.
+                        * The "key," however, must be the column name that the value should be inserted into.*/
                         ContentValues contentValues = new ContentValues();
                         contentValues.put(CommentsContract.CommentEntry.COLUMN_NAME_ITEM_NAME, nameEditText.getText().toString());
                         contentValues.put(CommentsContract.CommentEntry.COLUMN_NAME_ITEM_COMMENT, commentEditText.getText().toString());
+                        /*To update, you give the table name, the content values, and then you state which row should be updated.
+                        * In this case, we are updating the row that has _ID = the entry that was clicked.*/
                         database.update(CommentsContract.CommentEntry.TABLE_NAME,
                                 contentValues,
                                 CommentsContract.CommentEntry._ID + "=?",
                                 whereArgs);
-                        String[] projection = {CommentsContract.CommentEntry._ID,
-                                CommentsContract.CommentEntry.COLUMN_NAME_ITEM_NAME, CommentsContract.CommentEntry.COLUMN_NAME_ITEM_COMMENT};
-                        adapter.updateCursor(database.query(CommentsContract.CommentEntry.TABLE_NAME, projection, null, null, null, null, null));
-                        adapter.notifyDataSetChanged();
+                        refreshRecyclerView();
                     }
                 })
                 .setNegativeButton("Cancel", null)
@@ -186,16 +194,22 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String[] whereArgs = {Integer.toString(id)};
+                         /*To delete, you give the table name and then you state which row should be deleted.
+                         * In this case, we are updating the row that has _ID = the entry that was clicked.*/
                         database.delete(CommentsContract.CommentEntry.TABLE_NAME,
                                 CommentsContract.CommentEntry._ID + "=?",
                                 whereArgs);
-                        String[] projection = {CommentsContract.CommentEntry._ID,
-                                CommentsContract.CommentEntry.COLUMN_NAME_ITEM_NAME, CommentsContract.CommentEntry.COLUMN_NAME_ITEM_COMMENT};
-                        adapter.updateCursor(database.query(CommentsContract.CommentEntry.TABLE_NAME, projection, null, null, null, null, null));
-                        adapter.notifyDataSetChanged();
+                        refreshRecyclerView();
                     }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    public static void refreshRecyclerView() {
+        String[] projection = {CommentsContract.CommentEntry._ID,
+                CommentsContract.CommentEntry.COLUMN_NAME_ITEM_NAME, CommentsContract.CommentEntry.COLUMN_NAME_ITEM_COMMENT};
+        adapter.updateCursor(database.query(CommentsContract.CommentEntry.TABLE_NAME, projection, null, null, null, null, null));
+        adapter.notifyDataSetChanged();
     }
 }
